@@ -39,7 +39,7 @@ def init_page(page):
 
 def test_ui_create_edit_review_and_privacy():
     with sync_playwright() as p:
-        b=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+        b=p.chromium.launch(headless=True,args=['--no-sandbox'])
         pg=b.new_page(viewport={'width':1240,'height':820})
         err=[];pg.on('pageerror',lambda ex:err.append(str(ex)))
         init_page(pg)
@@ -67,7 +67,7 @@ def test_ui_create_edit_review_and_privacy():
 
 def test_mobile_render_no_overflow():
     with sync_playwright() as p:
-        b=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+        b=p.chromium.launch(headless=True,args=['--no-sandbox'])
         pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=1)
         init_page(pg)
         assert pg.evaluate('document.documentElement.scrollWidth <= innerWidth+2'),pg.evaluate('[document.documentElement.scrollWidth,innerWidth]')
@@ -85,7 +85,7 @@ def test_image_file_to_ocr_review_mock_no_upload():
     d.text((80,125),'ASML 10,850 -620',fill='black')
     image_bytes=BytesIO();image.save(image_bytes,format='PNG')
     with sync_playwright() as p:
-        b=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+        b=p.chromium.launch(headless=True,args=['--no-sandbox'])
         pg=b.new_page(viewport={'width':390,'height':844})
         init_page(pg)
         pg.evaluate("""() => {
@@ -115,7 +115,7 @@ def test_image_file_to_ocr_review_mock_no_upload():
 
 def test_disguised_image_rejected_and_cancellation_clears_selection():
     with sync_playwright() as p:
-        b=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+        b=p.chromium.launch(headless=True,args=['--no-sandbox'])
         pg=b.new_page(viewport={'width':390,'height':844})
         init_page(pg)
         pg.locator('#screenshots').set_input_files({'name':'fake.jpg','mimeType':'image/jpeg','buffer':b'not-a-jpeg'})
@@ -137,7 +137,7 @@ def test_two_screenshots_conflicting_values_need_explicit_resolution():
     from PIL import Image
     buffer=BytesIO();Image.new('RGB',(120,80),'white').save(buffer,format='PNG')
     with sync_playwright() as p:
-        b=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+        b=p.chromium.launch(headless=True,args=['--no-sandbox'])
         pg=b.new_page(viewport={'width':390,'height':844})
         init_page(pg)
         pg.evaluate("""() => {
@@ -166,3 +166,4 @@ def test_two_screenshots_conflicting_values_need_explicit_resolution():
         pg.locator('#dialog-body button').filter(has_text='אשר עדכון תיק').click()
         assert pg.locator('#holdings-body tr').count()==1
         b.close()
+
