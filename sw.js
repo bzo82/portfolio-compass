@@ -13,6 +13,16 @@ self.addEventListener('fetch', event => {
   const url=new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.includes('/api/') || url.pathname.includes('/cdn-cgi/')) return;
+  if (request.mode === 'navigate') {
+    event.respondWith(fetch(request).then(response => {
+      if (response.ok) {
+        const copy=response.clone();
+        event.waitUntil(caches.open(CACHE).then(cache => cache.put('./',copy)));
+      }
+      return response;
+    }).catch(() => caches.match('./')));
+    return;
+  }
   event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
     if (response.ok && response.type === 'basic' && (
       SHELL.some(path => new URL(path,self.registration.scope).pathname === url.pathname) ||

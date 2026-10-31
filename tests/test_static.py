@@ -11,4 +11,11 @@ class StaticSecurityTests(unittest.TestCase):
   self.assertIn('function createCropCanvas(',app)
   self.assertNotIn('localStorage.setItem(',app.replace("localStorage.setItem(VAULT_KEY,JSON.stringify(obj))",''))
   self.assertNotIn('FileReader',vault)
+ def test_pwa_update_recovers_existing_installations(self):
+  client=(ROOT/'pwa-client.mjs').read_text();worker=(ROOT/'sw.js').read_text()
+  self.assertIn("updateViaCache: 'none'",client)
+  self.assertIn('registration.update()',client)
+  self.assertIn("addEventListener('controllerchange'",client)
+  self.assertIn("request.mode === 'navigate'",worker)
+  self.assertIn('fetch(request)',worker)
 if __name__=='__main__':unittest.main()
