@@ -7,6 +7,8 @@ import re,json
 from playwright.sync_api import sync_playwright
 ROOT=Path(__file__).resolve().parents[1]
 HTML=(ROOT/'index.html').read_text()
+HTML=re.sub(r'<meta http-equiv="Content-Security-Policy"[^>]*>','',HTML)
+HTML=re.sub(r'<script src="security-bootstrap.js"></script>','',HTML)
 HTML=re.sub(r'<script type="module" src="app\.mjs"></script>','',HTML)
 HTML=re.sub(r'<link rel="stylesheet" href="style\.css">','',HTML)
 HTML=HTML.replace('</head>','<style>'+ (ROOT/'style.css').read_text()+'</style></head>')
@@ -31,6 +33,7 @@ window.fetch=async()=>({ok:false});
 
 def init_page(page):
     page.set_content(HTML,wait_until='load')
+    page.evaluate("document.documentElement.dataset.topLevel='true'")
     page.add_script_tag(content=STUB)
     page.add_script_tag(content=code)
     page.locator('#vault-pass').fill('test-password-strong')
@@ -166,4 +169,3 @@ def test_two_screenshots_conflicting_values_need_explicit_resolution():
         pg.locator('#dialog-body button').filter(has_text='אשר עדכון תיק').click()
         assert pg.locator('#holdings-body tr').count()==1
         b.close()
-

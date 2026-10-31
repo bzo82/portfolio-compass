@@ -33,7 +33,7 @@ def test_local_browser_real_ocr_and_zero_image_upload():
         page.locator('#vault-pass').fill('secure-test-password-long-2026')
         page.locator('#unlock-btn').click()
         page.locator('#app').wait_for(state='visible',timeout=20000)
-        page.wait_for_function("document.querySelector('#ocr-status-text').textContent.includes('קובצי OCR מקומיים זמינים')",timeout=20000)
+        page.wait_for_function("() => document.querySelector('#ocr-status-text').textContent.includes('קובצי OCR מקומיים זמינים')",timeout=20000)
         page.locator('#screenshots').set_input_files(str(ROOT/'fixtures/synthetic_broker_sample.png'))
         page.get_by_role('button',name='סרוק במכשיר').click()
         page.locator('#dialog-body textarea').wait_for(state='visible',timeout=150000)
@@ -42,7 +42,7 @@ def test_local_browser_real_ocr_and_zero_image_upload():
         page.get_by_role('button',name='המשך לבדיקת אחזקות').click()
         assert page.locator('.review-row').count()==3
         page.get_by_role('button',name='אשר עדכון תיק').click()
-        page.wait_for_function("document.querySelectorAll('#holdings-body tr').length===3",timeout=30000)
+        page.wait_for_function("() => document.querySelectorAll('#holdings-body tr').length===3",timeout=30000)
         assert '47,390' in page.locator('#stat-total').inner_text()
         for method,url,body in requests:
             assert method in ('GET','HEAD'),(method,url)

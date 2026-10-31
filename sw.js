@@ -1,5 +1,5 @@
 /* Offline shell. No image files or user portfolio data are cached. */
-const CACHE = 'portfolio-compass-v5.3-static';
+const CACHE = 'portfolio-compass-/*__CACHE_REVISION__*/';
 const SHELL = /*__OFFLINE_ASSETS__*/;
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(['./', ...SHELL])).then(() => self.skipWaiting()));

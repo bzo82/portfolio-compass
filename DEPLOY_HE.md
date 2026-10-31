@@ -1,11 +1,15 @@
-# מדריך פריסה
+# Portfolio Compass v5.3 - מצב אבטחה ופריסה
 
-המסלול היחיד הנתמך לפריסה עם מידע אישי הוא **Cloudflare Workers Static Assets + Cloudflare Access + JWT verification בקוד ה-Worker**. אין לפרוס ל-Pages ציבורי או להעתיק HTML ל-host פתוח.
+האפליקציה פורסמה ב-https://bzo82.github.io/portfolio-compass/ . קוד המקור ציבורי; נתוני התיק שמורים בכספת מקומית מוצפנת. אין JWT, Cloudflare Access, חשבון ענן או סנכרון. אין לשלוח צילומים או גיבויים למאגר.
 
-1. הפעל בדיקות ובנה `dist` כמפורט ב-`README_HE.md`.
-2. הגדר ספק זהות מאובטח עם סיסמה ו-MFA, ו-Cloudflare Access עם מדיניות Allow למייל המורשה בלבד.
-3. הגדר Worker secrets: `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `ALLOWED_EMAIL`.
-4. אמת `assets.run_worker_first=true` ושכל route, כולל workers.dev, custom domain ו-preview, חסום ללא JWT מאומת.
-5. פרוס רק לאחר שה-OCR האמיתי עבר, והריץ את `scripts/verify_protection.py` מול כל origin.
+הצפנה: AES-256-GCM ו-PBKDF2-SHA256. נעילה מבטלת פעולות ישנות ומונעת שמירה מאוחרת בכספת. OCR מופעל מקומית, עם בדיקה ידנית לפני קליטה. ייצוא CSV גלוי דורש אישור ומנטרל תחיליות נוסחה בשדות טקסט.
 
-**לא בוצעה פריסה בפועל**. הפרטים המלאים: `SECURE_DEPLOY_HE.md`.
+הבנייה מפיקה גרסת Service Worker לפי תוכן הנכסים, כדי להעביר עדכוני קוד ללקוחות קיימים. אין למחוק אחסון דפדפן בלי גיבוי מוצפן וסיסמה.
+
+תלויות: package-lock.json ו-npm ci. הפרסום מותנה בהצלחת בדיקות JS, Python, OCR ואבטחה.
+
+## מגבלה פתוחה של האירוח
+
+GitHub Pages אינו מחיל את קובץ _headers ככותרות HTTP. CSP ו-referrer נאכפים באמצעות meta, והאפליקציה אינה מציגה או מפעילה את עצמה בתוך iframe. זו הגנת UI משלימה ואינה כותרת frame-ancestors או X-Frame-Options. לסגירה מלאה של דרישת הכותרות נדרש מארח או proxy שתומך בכותרות HTTP. אין לטעון שכותרות אלו פעילות ב-Pages.
+
+נדרשת עדיין בדיקת התקנה, עדכון Offline וגיבוי ושחזור במכשיר Android של המשתמש. מסמכי Cloudflare/JWT הישנים הוחלפו בתיאור זה ואינם חלים על הפריסה.

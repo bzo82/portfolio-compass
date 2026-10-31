@@ -5,7 +5,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def test_build_packs_same_origin_files_with_mocked_npm_assets():
     with tempfile.TemporaryDirectory() as td:
         dst=Path(td)
-        for n in ['build.mjs','index.html','style.css','app.mjs','parser.mjs','vault.mjs','pwa-client.mjs','sw.js','manifest.webmanifest','_headers']:
+        for n in ['build.mjs','security-bootstrap.js','index.html','style.css','app.mjs','parser.mjs','vault.mjs','pwa-client.mjs','sw.js','manifest.webmanifest','_headers']:
             shutil.copy(ROOT/n,dst/n)
         icons=dst/'icons';icons.mkdir(parents=True)
         for n in ('icon-192.png','icon-512.png'): shutil.copy(ROOT/'icons'/n,icons/n)
@@ -24,12 +24,17 @@ def test_build_packs_same_origin_files_with_mocked_npm_assets():
         assert (dst/'dist/vendor/lang/heb.traineddata.gz').exists()
         report=json.loads((dst/'dist/integrity-manifest.json').read_text())
         assert 'vendor/lang/heb.traineddata.gz' in report['sha256']
+        old_sw=(dst/'dist/sw.js').read_text()
+        with (dst/'app.mjs').open('a') as f:f.write('\n// revision regression\n')
+        subprocess.run(['node',str(dst/'build.mjs')],cwd=dst,check=True,capture_output=True)
+        assert (dst/'dist/sw.js').read_text()!=old_sw
+        assert '/*__CACHE_REVISION__*/' not in (dst/'dist/sw.js').read_text()
 
 
 def test_build_fails_without_wasm_binary():
     with tempfile.TemporaryDirectory() as td:
         dst=Path(td)
-        for n in ['build.mjs','index.html','style.css','app.mjs','parser.mjs','vault.mjs','pwa-client.mjs','sw.js','manifest.webmanifest','_headers']:
+        for n in ['build.mjs','security-bootstrap.js','index.html','style.css','app.mjs','parser.mjs','vault.mjs','pwa-client.mjs','sw.js','manifest.webmanifest','_headers']:
             shutil.copy(ROOT/n,dst/n)
         icons=dst/'icons';icons.mkdir(parents=True)
         for n in ('icon-192.png','icon-512.png'): shutil.copy(ROOT/'icons'/n,icons/n)

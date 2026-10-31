@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install dependencies
-        run: npm install --ignore-scripts --no-fund
+        run: npm ci --ignore-scripts --no-fund
       - name: Dependency security gate
         run: npm audit --audit-level=high --omit=dev
       - name: JavaScript tests

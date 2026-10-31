@@ -1,25 +1,15 @@
-# דוח בדיקות - v5.2
+# Portfolio Compass v5.3 - מצב אבטחה ופריסה
 
-| קבוצת בדיקות | תוצאה בסביבת ההכנה |
-|---|---|
-| Node unit / auth / parser / crypto | 34 passed, 0 failed |
-| Python DOM mock, build mock, server, static | 11 passed, 0 failed |
-| Python real Chromium/Tesseract.js integration | 1 skipped: npm runtime missing |
-| Tesseract CLI מקומי, תמונה סינתטית באנגלית | תוקף ידנית 3 שורות: META, ASML, CIBR, עם שווי ורווח מדויקים |
-| npm run build עם חבילות אמיתיות | לא הורץ: סביבת ההכנה אינה יכולה להגיע ל-npm |
-| Cloudflare Access, MFA, domain, TLS | לא הוגדר ולא נבדק בענן |
+האפליקציה פורסמה ב-https://bzo82.github.io/portfolio-compass/ . קוד המקור ציבורי; נתוני התיק שמורים בכספת מקומית מוצפנת. אין JWT, Cloudflare Access, חשבון ענן או סנכרון. אין לשלוח צילומים או גיבויים למאגר.
 
-**חשוב:** בדיקת Tesseract CLI אינה הוכחה ש-Tesseract.js בדפדפן עובד, ובדיקת build עם נכסים מדומים אינה build production. קובצי ה-JavaScript/WASM האמיתיים זמינים רק לאחר `npm install` בסביבת בנייה המחוברת לאינטרנט.
+הצפנה: AES-256-GCM ו-PBKDF2-SHA256. נעילה מבטלת פעולות ישנות ומונעת שמירה מאוחרת בכספת. OCR מופעל מקומית, עם בדיקה ידנית לפני קליטה. ייצוא CSV גלוי דורש אישור ומנטרל תחיליות נוסחה בשדות טקסט.
 
-## בדיקות release אוטומטיות שנוספו
+הבנייה מפיקה גרסת Service Worker לפי תוכן הנכסים, כדי להעביר עדכוני קוד ללקוחות קיימים. אין למחוק אחסון דפדפן בלי גיבוי מוצפן וסיסמה.
 
-- `npm run test:ocr-live` מפעיל Tesseract.js מקומי עם מודלי `heb+eng` ותמונת ברוקר סינתטית, ומשווה שלושה ניירות ומחירים בדיוק.
-- `python -m pytest tests/test_ocr_browser_live.py` מפעיל Chromium ב-390px, סורק PNG באמצעות WASM אמיתי ומוודא שלא נשלח גוף בקשת HTTP ושאין קריאות לכתובות חיצוניות.
-- GitHub Actions (`.github/workflows/verify.yml`) מריץ את שתי הבדיקות אחרי התקנת npm ו-Chromium, בנוסף לבדיקות היחידה וה-build. **יש להפעיל בפועל את ה-CI ולראות PASS לפני פריסה**.
-- `python scripts/verify_protection.py https://YOUR-ORIGIN` בודק שללא אימות לא ניתן להוריד קבצי אפליקציה.
+תלויות: package-lock.json ו-npm ci. הפרסום מותנה בהצלחת בדיקות JS, Python, OCR ואבטחה.
 
-## Acceptance criteria שלא נסגרו
+## מגבלה פתוחה של האירוח
 
-1. PASS של CI מול runtime אמיתי.
-2. בדיקת צילום מסך מייצג (עם פרטים אישיים מושחרים) במכשיר אנדרואיד, כולל RTL ומטבע.
-3. בדיקה חיה של כניסה באימייל המורשה עם MFA, חסימת אימייל אחר ובקשות אנונימיות לכל הדומיינים.
+GitHub Pages אינו מחיל את קובץ _headers ככותרות HTTP. CSP ו-referrer נאכפים באמצעות meta, והאפליקציה אינה מציגה או מפעילה את עצמה בתוך iframe. זו הגנת UI משלימה ואינה כותרת frame-ancestors או X-Frame-Options. לסגירה מלאה של דרישת הכותרות נדרש מארח או proxy שתומך בכותרות HTTP. אין לטעון שכותרות אלו פעילות ב-Pages.
+
+נדרשת עדיין בדיקת התקנה, עדכון Offline וגיבוי ושחזור במכשיר Android של המשתמש. מסמכי Cloudflare/JWT הישנים הוחלפו בתיאור זה ואינם חלים על הפריסה.

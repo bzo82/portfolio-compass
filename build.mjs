@@ -12,7 +12,7 @@ function copy(from,to){if(!existsSync(from))throw Error('Missing required build 
 function copyDir(from,to){for(const e of readdirSync(from,{withFileTypes:true})){if(e.isDirectory())copyDir(path.join(from,e.name),path.join(to,e.name));else copy(path.join(from,e.name),path.join(to,e.name));}}
 if(!existsSync(source))throw Error('Run npm install before build');
 if(existsSync(dest))rmSync(dest,{recursive:true,force:true});mkdirSync(dest,{recursive:true});
-for(const name of ['index.html','style.css','app.mjs','parser.mjs','vault.mjs','pwa-client.mjs','sw.js','manifest.webmanifest','_headers'])copy(path.join(here,name),path.join(dest,name));
+for(const name of ['index.html','security-bootstrap.js','style.css','app.mjs','parser.mjs','vault.mjs','pwa-client.mjs','sw.js','manifest.webmanifest','_headers'])copy(path.join(here,name),path.join(dest,name));
 for(const name of ['icon-192.png','icon-512.png'])copy(path.join(here,'icons',name),path.join(dest,'icons',name));
 for(const name of ['eng.traineddata.gz','heb.traineddata.gz'])copy(path.join(here,'vendor/lang',name),path.join(dest,'vendor/lang',name));
 for(const name of ['tesseract.min.js','worker.min.js'])copy(path.join(source,'tesseract.js/dist',name),path.join(dest,'vendor/tesseract',name));
@@ -37,7 +37,10 @@ const offlineAssets=[];
 function listAssets(folder) { for(const e of readdirSync(folder,{withFileTypes:true})){const f=path.join(folder,e.name);if(e.isDirectory())listAssets(f);else if(e.name!=='sw.js'&&e.name!=='integrity-manifest.json')offlineAssets.push('./'+path.relative(dest,f).replaceAll('\\\\','/'));}}
 listAssets(dest);
 const swPath=path.join(dest,'sw.js');
-const sw=readFileSync(swPath,'utf8').replace('/*__OFFLINE_ASSETS__*/',JSON.stringify(offlineAssets));
+const releaseHash=createHash('sha256');
+for(const asset of [...offlineAssets].sort()){releaseHash.update(asset);releaseHash.update(readFileSync(path.join(dest,asset.slice(2))));}
+const revision=releaseHash.digest('hex').slice(0,24);
+const sw=readFileSync(swPath,'utf8').replace('/*__CACHE_REVISION__*/',revision).replace('/*__OFFLINE_ASSETS__*/',JSON.stringify(offlineAssets));
 writeFileSync(swPath,sw);
 const manifest={builtAt:new Date().toISOString(),sha256:{}};
 function hashDir(folder,root){for(const e of readdirSync(folder,{withFileTypes:true})){const file=path.join(folder,e.name);if(e.isDirectory())hashDir(file,root);else{manifest.sha256[path.relative(root,file).replaceAll('\\','/')]=createHash('sha256').update(readFileSync(file)).digest('hex');}}}

@@ -22,6 +22,6 @@ export async function decryptState(envelope,pass){
  try{const key=await keyFrom(pass,unbase64(envelope.salt));const raw=await crypto.subtle.decrypt({name:'AES-GCM',iv:unbase64(envelope.iv)},key,unbase64(envelope.ciphertext));return JSON.parse(D.decode(raw));}
  catch{throw new Error('סיסמה שגויה או קובץ פגום');}
 }
-export async function saveVault(state,pass){const prior=localStorage.getItem(VAULT_KEY);const salt=prior?JSON.parse(prior).salt:undefined;const result=await encryptState(state,pass,salt);localStorage.setItem(VAULT_KEY,JSON.stringify(result));return result;}
+export async function saveVault(state,pass,isCurrent=()=>true){const prior=localStorage.getItem(VAULT_KEY);const salt=prior?JSON.parse(prior).salt:undefined;const result=await encryptState(state,pass,salt);if(!isCurrent())throw Error('הפעולה בוטלה עקב נעילת הכספת');localStorage.setItem(VAULT_KEY,JSON.stringify(result));return result;}
 export async function loadVault(pass){const source=localStorage.getItem(VAULT_KEY);if(!source)throw new Error('לא נמצא כספת בדפדפן');return decryptState(JSON.parse(source),pass);}
 export function exportVault(){const raw=localStorage.getItem(VAULT_KEY);if(!raw)throw Error('אין כספת לייצוא');return raw;}
