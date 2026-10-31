@@ -1,0 +1,14 @@
+{
+  "name": "portfolio-compass-v5-3-local-pwa",
+  "private": true,
+  "version": "5.3.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:ocr-live": "node scripts/ocr_live_check.mjs"
+  },
+  "dependencies": {
+    "tesseract.js": "7.0.0"
+  }
+}

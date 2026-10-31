@@ -1,0 +1,70 @@
+name: Portfolio Compass - verify and publish
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-fund
+      - name: Dependency security gate
+        run: npm audit --audit-level=high --omit=dev
+      - name: JavaScript tests
+        run: npm test
+      - name: Build local-first PWA with same-origin OCR runtime
+        run: npm run build
+      - name: Real Node OCR and parser test
+        run: npm run test:ocr-live
+      - name: Chromium prerequisites
+        run: |
+          python -m pip install -q pytest playwright pillow
+          python -m playwright install --with-deps chromium
+      - name: Python tests including real OCR in Chromium
+        run: python -m pytest -q tests
+      - name: Verify offline precache and non-public artifacts
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          dist=Path('dist')
+          sw=(dist/'sw.js').read_text()
+          assert '/*__OFFLINE_ASSETS__*/' not in sw
+          for name in ('vendor/lang/heb.traineddata.gz','vendor/lang/eng.traineddata.gz','vendor/core/tesseract-core-simd-lstm.wasm','manifest.webmanifest'):
+              assert (dist/name).exists(), name
+              assert './'+name in sw, name
+          assert not list(dist.rglob('*backup*'))
+          assert not list(dist.rglob('*.png')) or all('icons' in f.parts for f in dist.rglob('*.png'))
+          (dist/'.nojekyll').write_text('')
+          PY
+      - name: Prepare GitHub Pages artifact
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages after all release gates pass
+        id: deployment
+        uses: actions/deploy-pages@v4
