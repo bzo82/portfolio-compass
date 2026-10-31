@@ -46,7 +46,7 @@ def test_ui_create_edit_review_and_privacy():
         pg=b.new_page(viewport={'width':1240,'height':820})
         err=[];pg.on('pageerror',lambda ex:err.append(str(ex)))
         init_page(pg)
-        assert 'התיק ריק' in pg.locator('#holdings-body').inner_text()
+        assert 'התיק שלך מתחיל כאן' in pg.locator('#holdings-body').inner_text()
         pg.locator('#manual-btn').click()
         pg.locator('#dialog-body input').nth(0).fill('META Platforms')
         pg.locator('#dialog-body input').nth(1).fill('META')
