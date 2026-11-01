@@ -92,7 +92,7 @@ def test_image_file_to_ocr_review_mock_no_upload():
         pg=b.new_page(viewport={'width':390,'height':844})
         init_page(pg)
         pg.evaluate("""() => {
-            window.Tesseract={createWorker:async()=>({recognize:async()=>({data:{text:'META 21,300 5,420\\nASML 10,850 -620'}}),terminate:async()=>{}})};
+            window.Tesseract={createWorker:async()=>({setParameters:async()=>{},recognize:async()=>({data:{text:'META 21,300 5,420\\nASML 10,850 -620'}}),terminate:async()=>{}})};
         }""")
         # Setup engine 'ready' via same JS variable in bundled IIFE: click select after
         # forcing the mocked local asset availability before a second unlock.
@@ -145,7 +145,7 @@ def test_two_screenshots_conflicting_values_need_explicit_resolution():
         init_page(pg)
         pg.evaluate("""() => {
             window.__scanCount=0;
-            window.Tesseract={createWorker:async()=>({recognize:async()=>({data:{text:(++window.__scanCount===1?'META 21,300 +5,420':'META 22,300 +6,420')}}),terminate:async()=>{}})};
+            window.Tesseract={createWorker:async()=>({setParameters:async()=>{},recognize:async()=>({data:{text:(++window.__scanCount===1?'META 21,300 +5,420':'META 22,300 +6,420')}}),terminate:async()=>{}})};
             window.fetch=async()=>({ok:true});
         }""")
         pg.locator('#lock-btn').click()
