@@ -102,7 +102,7 @@ def test_image_file_to_ocr_review_mock_no_upload():
         pg.locator('#unlock-btn').click()
         pg.locator('#app').wait_for(state='visible')
         pg.locator('#screenshots').set_input_files({'name':'sample.png','mimeType':'image/png','buffer':image_bytes.getvalue()})
-            pg.get_by_role('heading',name='הגדרת אזור סריקה - תמונות אינן מועלות').wait_for(state='visible')
+        pg.get_by_role('heading',name='הגדרת אזור סריקה - תמונות אינן מועלות').wait_for(state='visible')
         pg.locator('#dialog-body button').filter(has_text='סרוק במכשיר').click()
         pg.locator('#dialog-body textarea').wait_for(timeout=10000)
         assert 'META' in pg.locator('#dialog-body textarea').input_value()
