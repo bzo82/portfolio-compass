@@ -35,7 +35,7 @@ function render(){if(!state)return;const hasHoldings=state.holdings.length>0;for
  const pcell=node('td','num secret',h.pnl===null?'לא ידוע':money(h.pnl,h.currency));if(h.pnl!==null)pcell.classList.add(h.pnl<0?'negative':'positive');cells.push(pcell);
  const wcell=node('td');if(weights){wcell.append(node('div','num',pct(weights.w)));const pg=node('div','progress'),bar=node('div');bar.style.width=pct(weights.w);pg.append(bar);wcell.append(pg);}else wcell.textContent='—';cells.push(wcell);
  cells.push(node('td','secondary',h.asof||'לא ידוע'));
- const action=node('td');const edit=node('button','inline-button','ערוך');edit.type='button';edit.addEventListener('click',()=>assetDialog(h));action.append(edit);cells.push(action);tr.append(...cells);tbody.append(tr);}
+ const action=node('td');const edit=node('button','inline-button','ערוך');edit.type='button';edit.setAttribute('aria-label',`עריכת ${h.name}`);edit.addEventListener('click',()=>assetDialog(h));action.append(edit);cells.push(action);['נייר ערך','שווי','רווח / הפסד','משקל בתיק','עודכן','פעולה'].forEach((label,i)=>cells[i].dataset.label=label);tr.append(...cells);tbody.append(tr);}
  if(!sorted.length){const tr=node('tr'),td=node('td','empty','התיק שלך מתחיל כאן. בחר צילום מסך למעלה, ייבא קובץ או הוסף אחזקה ידנית.');td.colSpan=6;tr.append(td);tbody.append(tr);}
  $('#fx-usd').value=state.fx.USD??'';$('#fx-eur').value=state.fx.EUR??'';
  renderExposure(m);renderSnapshots();
