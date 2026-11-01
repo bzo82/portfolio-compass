@@ -16,6 +16,8 @@ class StaticSecurityTests(unittest.TestCase):
   self.assertIn("updateViaCache: 'none'",client)
   self.assertIn('registration.update()',client)
   self.assertIn("addEventListener('controllerchange'",client)
+  self.assertIn('const hadController = Boolean(navigator.serviceWorker.controller)',client)
+  self.assertIn('if (!hadController || refreshing) return',client)
   self.assertIn("request.mode === 'navigate'",worker)
   self.assertIn('fetch(request)',worker)
 if __name__=='__main__':unittest.main()
