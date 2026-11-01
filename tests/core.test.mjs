@@ -42,3 +42,21 @@ test('English name last is parsed without shifting monetary columns',()=>{
  assert.equal(r.rows[0].value,21300);
  assert.equal(r.rows[0].pnl,5420);
 });
+
+test('OCR refuses extra quantity/price columns rather than importing them as value',()=>{
+ for(const line of ['META 50 230.10 11,505 900','קרן בנקים 1141111 46,420 21,850','תכלית 125 46,420 21,850'])assert.equal(parseOCR(line).rows.length,0,line);
+});
+test('OCR rejects account totals, dates, malformed decimals and mixed currency rows',()=>{
+ for(const line of ['סה״כ 100,000 10,000','שווי תיק 100,000','META 12,34,567 100','META 1..23 10','META $100 ₪20','עודכן 01/11/2026'])assert.equal(parseOCR(line).rows.length,0,line);
+ assert.equal(parseNumber('12O50'),null);
+ assert.equal(parseNumber('12,34,567'),null);
+});
+test('RTL trailing minus is a loss and a lone PNL is never used as value',()=>{
+ assert.equal(parseNumber('620-'),-620);
+ assert.equal(parseOCR('ASML 10,850 620-').rows[0].pnl,-620);
+ assert.equal(parseOCR('ASML 620',{format:'pnl-value'}).rows.length,0);
+});
+test('funds sharing a brand are not assigned the same ticker or merged',()=>{
+ const rows=parseOCR('ISHARES MSCI WORLD 12,000 1,000\nISHARES MSCI EM 5,000 200').rows;
+ assert.equal(rows.length,2);assert.equal(rows[0].ticker,'');assert.equal(mergeScans([rows]).length,2);
+});

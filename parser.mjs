@@ -7,29 +7,33 @@ const STOP = /^(?:סה.?כ|סהכ|סך|שווי\s+תיק|יתרה|מזומן|ר�
 const BAD_LINE = /(?:מספר\s*חשבון|ת\.ז\.|מספר\s*לקוח|account\s*(?:number|no)|customer\s*id|סיסמה|password|IBAN)/i;
 const TICKER = /\b[A-Z][A-Z0-9.\-]{1,9}\b/;
 const FIN = /(?:₪|ש["״']?ח|ILS|NIS|\$|USD|EUR|€)/i;
-const NUM = /[-−+]?\(?\s*[₪$€]?\s*\d+(?:[,.]\d+)*\s*%?\s*\)?/g;
+const NUM = /(?<![A-Za-z0-9])[-−+]?\(?[ \t]*[₪$€]?[ \t]*\d+(?:[,.]\d+)*(?:[ \t]*%)?[ \t]*\)?(?:[-−](?!\d))?/g;
 export function parseNumber(input) {
   if (input === null || input === undefined) return null;
   let s = String(input).trim();
   if (!s) return null;
-  const neg = /^\s*\(/.test(s) && /\)\s*$/.test(s) || /^\s*[-−]/.test(s);
+  const neg = /^\s*\(/.test(s) && /\)\s*$/.test(s) || /^\s*[-−]/.test(s) || /[-−]\s*$/.test(s);
+  // Reject OCR substitutions and broken punctuation rather than joining digits.
+  if(!/^[\s₪$€+−\-()\d.,%]+$/.test(s))return null;
   s=s.replace(/[^\d.,]/g,'');
   if(!s) return null;
+  if(!/^\d+(?:[,.]\d+)*$/.test(s))return null;
   const dots=(s.match(/\./g)||[]).length, commas=(s.match(/,/g)||[]).length;
-  if(dots && commas){const dec=s.lastIndexOf('.')>s.lastIndexOf(',')?'.':','; const sep=dec==='.'?',':'.';s=s.split(sep).join('').replace(dec,'.');}
-  else if(commas){const parts=s.split(',');if(parts.length>2 || (parts.length===2 && parts[1].length===3)) s=parts.join(''); else s=s.replace(',','.');}
-  else if(dots){const parts=s.split('.');if(parts.length>2 || (parts.length===2 && parts[1].length===3))s=parts.join('');}
+  if(dots && commas){const dec=s.lastIndexOf('.')>s.lastIndexOf(',')?'.':','; const sep=dec==='.'?',':'.';const parts=s.split(dec);if(parts.length!==2||!/^\d{1,2}$/.test(parts[1])||!/^\d{1,3}(?:[,.]\d{3})+$/.test(parts[0]))return null;s=parts[0].split(sep).join('')+'.'+parts[1];}
+  else if(commas||dots){const sep=commas?',':'.',parts=s.split(sep);if(parts.length>2||parts[1].length===3){if(!/^\d{1,3}(?:[,.]\d{3})+$/.test(s))return null;s=parts.join('');}else {if(parts[1].length>2)return null;s=parts.join('.');}}
   const n=Number(s);return Number.isFinite(n)?(neg?-Math.abs(n):n):null;
 }
 export function currencyOf(input){const s=String(input||'');if(/\$|\bUSD\b/i.test(s))return 'USD';if(/€|\bEUR\b/i.test(s))return 'EUR';if(/₪|\bILS\b|\bNIS\b|ש["״']?ח/i.test(s))return 'ILS';return null;}
 export function normalizeName(s){return String(s||'').normalize('NFKC').toLowerCase().replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g,'').replace(/[^a-z0-9\u0590-\u05ff]/g,'').slice(0,100);}
-export function plausibleTicker(s){const a=String(s||'').match(TICKER);return a?a[0]:'';}
+export function plausibleTicker(s){const text=String(s||'').trim();return /^[A-Z][A-Z0-9.\-]{0,9}$/.test(text)&&!['ILS','USD','EUR','NIS'].includes(text)?text:'';}
 export function cleanText(s){return String(s||'').replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g,'').replace(/\u00a0/g,' ').trim().slice(0,250);}
-function fields(line){return [...line.matchAll(NUM)].map(m=>({raw:m[0].trim(),number:parseNumber(m[0]),start:m.index,end:m.index+m[0].length,percent:m[0].includes('%'),currency:currencyOf(m[0])})).filter(x=>x.number!==null);}
+function fields(line){return [...line.matchAll(NUM)].map(m=>({raw:m[0].trim(),number:parseNumber(m[0]),start:m.index,end:m.index+m[0].length,percent:m[0].includes('%'),currency:currencyOf(m[0])}));}
 const amount = x=>Number.isFinite(x?.number) && !x.percent && Math.abs(x.number)>=0 && Math.abs(x.number)<=1e11;
 const parseLine=(line,kind,defaultCurrency='ILS')=>{
  const f=fields(line);
- if(f.length<1||BAD_LINE.test(line))return null;
+ if(f.length<1||f.some(x=>x.number===null)||BAD_LINE.test(line))return null;
+ if(/^(?:סה[״"׳']?כ|סך הכל|שווי תיק|יתרה|מזומן|רווח כולל|total|portfolio|balance|cash|market value|profit|תאריך|שם נייר|כמות|מחיר)(?:\s|:|\||$)/i.test(line))return null;
+ if(/\d{1,4}[/:]\d{1,2}(?:[/:]\d{2,4})?/.test(line))return null;
  // OCR may read RTL tables as amounts first, name last. Alternatively an Israeli
  // security ID may precede the name. Never treat the identifier as market value.
  const prefix=line.slice(0,f[0].start).replace(/^[•\s-]+/,'').trim();
@@ -43,14 +47,20 @@ const parseLine=(line,kind,defaultCurrency='ILS')=>{
   header=middle;securityId=true;
  }
  if(!header)return null;
+ // A name interrupted by numbers, a second name, or extra amount columns is
+ // ambiguous (index number, quantity, price, ID...). Never guess the value.
+ const nameFragment=x=>/[A-Za-z\u0590-\u05ff]/.test(x.replace(/\b(?:ILS|USD|NIS|EUR)\b/ig,'').replace(/ש["״']?ח/g,''));
+ const gaps=f.slice(1).map((x,i)=>line.slice(f[i].end,x.start));
+ if(gaps.some(x=>nameFragment(x)&&!(securityId&&x.trim()===middle)))return null;
  const nums=f.filter((x,i)=>amount(x)&&!(securityId&&i===0));
  if(!nums.length)return null;
+ if(nums.length>(kind==='value-only'?1:2))return null;
  // We don't infer that a negative row total is a value; value must be nonnegative.
  let v=null,p=null;
  if(kind==='value-pnl'){
    if(nums.length>=2){v=nums[0];p=nums[1];}else v=nums[0];
  }else if(kind==='pnl-value'){
-   if(nums.length>=2){p=nums[0];v=nums[1];}else v=nums[0];
+   if(nums.length>=2){p=nums[0];v=nums[1];}else return null;
  }else if(kind==='value-only'){v=nums[0];}
  else if(kind==='value-pct-pnl'){
    v=nums[0];p=nums.find((x,i)=>i>0 && x.number<0)||nums[nums.length-1];
@@ -59,6 +69,8 @@ const parseLine=(line,kind,defaultCurrency='ILS')=>{
  if(!v||v.percent||v.number<0||v.number>1e10)return null;
  const name=cleanText(header.replace(/\b(?:ILS|USD|NIS|EUR)\b/ig,'').replace(/[|:]/g,' '));
  if(!name||FIN.test(name)||/^\d+/.test(name))return null;
+ const explicitCurrencies=[...line.matchAll(/₪|\$|€|\b(?:ILS|USD|NIS|EUR)\b/ig)].map(x=>currencyOf(x[0]));
+ if(new Set(explicitCurrencies).size>1)return null;
  const curr=v.currency||currencyOf(line)||defaultCurrency;
  const pnlCurrency=p?(p.currency||curr):null;
  // A screenshot's gain must be a monetary amount, never a percent.
